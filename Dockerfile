@@ -4,7 +4,7 @@ RUN apt-get update && \
   apt-get install -y \
     libgstrtspserver-1.0-0 libgstreamer1.0-0 libgstreamer-plugins-bad1.0-0 \
     gstreamer1.0-x gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad libssl1.1 wget && \
+    gstreamer1.0-plugins-bad && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 RUN wget https://github.com/QuantumEntangledAndy/neolink/releases/download/v0.6.2/neolink_linux_x86_64_bullseye.zip && \
