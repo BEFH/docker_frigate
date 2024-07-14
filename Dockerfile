@@ -2,7 +2,7 @@ FROM ghcr.io/blakeblackshear/frigate:stable-tensorrt
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
   apt-get upgrade -y && \
-  apt-get install -y --no-install-recommends \
+  apt-get install -y --no-install-recommends --allow-downgrades \
     libgstrtspserver-1.0-0 libgstreamer1.0-0 libgstreamer-plugins-bad1.0-0 \
     gstreamer1.0-x gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-tools \
