@@ -39,12 +39,10 @@ jobs:
             echo "digest_changed=false" >> $GITHUB_OUTPUT
           else
             echo "digest_changed=true" >> $GITHUB_OUTPUT
-            echo "$current_digest" > upstream_digest.txt
           fi
         else
           echo "First run or upstream_digest.txt file not found"
           echo "digest_changed=true" >> $GITHUB_OUTPUT
-          echo "$current_digest" > upstream_digest.txt
         fi
 
   call-publish:
@@ -56,11 +54,14 @@ jobs:
       digest: ${{ needs.check-digest.outputs.digest }}
 
   commit-changes:
-    needs: call-publish
+    needs: [call-publish, check-digest]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+    - name: save
+      run: |
+        echo '${{ needs.check-digest.outputs.digest }}' > upstream_digest.txt
     - name: Commit and Push Changes
       run: |
         git config --global user.name "${{ github.actor }}"
