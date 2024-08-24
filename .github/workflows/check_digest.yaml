@@ -1,8 +1,8 @@
 name: Check Container Digest
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  #schedule:
+  #  - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       logLevel:
