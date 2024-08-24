@@ -16,8 +16,8 @@ jobs:
   check-digest:
     runs-on: ubuntu-latest
     outputs:
-      digest: ${{ steps.current_digest.current_digest }}
-      new: ${{ steps.compare_digests.digest_changed }}
+      digest: ${{ steps.current_digest.outputs.current_digest }}
+      new: ${{ steps.compare_digests.outputs.digest_changed }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
