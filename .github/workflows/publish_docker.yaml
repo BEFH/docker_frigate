@@ -6,6 +6,13 @@
 name: Publish Docker image
 
 on:
+  workflow_call:
+    inputs:
+      digest:
+        description: 'The new digest value'
+        required: false
+        type: string
+
   release:
     types: [published]
 
@@ -16,6 +23,14 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
+
+      - name: Handle workflow call or release event
+        run: |
+          if [ -n "${{ inputs.digest }}" ]; then
+            echo "Triggered by workflow_call with digest: ${{ inputs.digest }}"
+          else
+            echo "Triggered by a release event"
+
       -
         name: Login to Docker Hub
         uses: docker/login-action@v3

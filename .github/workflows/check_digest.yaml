@@ -1,0 +1,57 @@
+name: Check Container Digest
+
+on:
+  schedule:
+    - cron: '30 * * * *'
+
+jobs:
+  check-digest:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install skopeo and jq
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y skopeo jq
+
+    - name: Get current digest
+      id: current_digest
+      run: |
+        dg=$(skopeo inspect docker://ghcr.io/blakeblackshear/frigate:stable-tensorrt \
+            --override-arch=amd64 --override-os=linux -n | \
+            jq -r '.Digest')
+        echo "current_digest=$dg" >> $GITHUB_ENV
+
+    - name: Compare digests
+      id: compare_digests
+      run: |
+        if [ -f "upstream_digest.txt" ]; then
+          previous_digest=$(cat upstream_digest.txt)
+          if [ "$previous_digest" == "$current_digest" ]; then
+            echo "No change in digest"
+            echo "digest_changed=false" >> $GITHUB_ENV
+          else
+            echo "digest_changed=true" >> $GITHUB_ENV
+            echo "$current_digest" > upstream_digest.txt
+          fi
+        else
+          echo "First run or upstream_digest.txt file not found"
+          echo "digest_changed=true" >> $GITHUB_ENV
+          echo "$current_digest" > upstream_digest.txt
+
+    - name: Call triggered workflow if digest changed
+      if: env.digest_changed == 'true'
+      uses: ./.github/workflows/publish_docker.yaml
+      with:
+        digest: ${{ env.current_digest }}
+
+    - name: Commit and Push Changes
+      if: env.digest_changed == 'true'
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        git add upstream_digest.txt
+        git commit -m "Update digest"
+        git push
