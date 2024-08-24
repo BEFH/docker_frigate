@@ -30,6 +30,7 @@ jobs:
             echo "Triggered by workflow_call with digest: ${{ inputs.digest }}"
           else
             echo "Triggered by a release event"
+          fi
 
       -
         name: Login to Docker Hub
