@@ -51,6 +51,7 @@ jobs:
     needs: check-digest
     if: ${{ needs.check-digest.outputs.new == 'true' }}
     uses: ./.github/workflows/publish_docker.yaml
+    secrets: inherit
     with:
       digest: ${{ needs.check-digest.outputs.digest }}
 
