@@ -30,9 +30,7 @@ jobs:
     - name: Get current digest
       id: current_digest
       run: |
-        dg=$(skopeo inspect docker://ghcr.io/blakeblackshear/frigate:stable-tensorrt \
-            --override-arch=amd64 --override-os=linux -n | \
-            jq -r '.Digest')
+        dg=$(skopeo inspect docker://ghcr.io/blakeblackshear/frigate:stable-tensorrt --override-arch=amd64 --override-os=linux | jq -r '.Digest')
         echo "current_digest=$dg" >> $GITHUB_ENV
 
     - name: Compare digests
