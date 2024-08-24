@@ -16,33 +16,34 @@ jobs:
   check-digest:
     runs-on: ubuntu-latest
     outputs:
-      digest: ${{ steps.current_digest.outputs.current_digest }}
-      new: ${{ steps.compare_digests.outputs.digest_changed }}
+      digest: ${{ steps.digest.outputs.current_digest }}
+      new: ${{ steps.compare.outputs.digest_changed }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Get current digest
-      id: current_digest
+      id: digest
       run: |
         dg=$(skopeo inspect docker://ghcr.io/blakeblackshear/frigate:stable-tensorrt --override-arch=amd64 --override-os=linux | jq -r '.Digest')
         echo "current_digest=$dg" >> $GITHUB_ENV
+        echo "current_digest=$dg" >> $GITHUB_OUTPUT
 
     - name: Compare digests
-      id: compare_digests
+      id: compare
       run: |
         if [ -f "upstream_digest.txt" ]; then
           previous_digest=$(cat upstream_digest.txt)
           if [ "$previous_digest" == "$current_digest" ]; then
             echo "No change in digest"
-            echo "digest_changed=false" >> $GITHUB_ENV
+            echo "digest_changed=false" >> $GITHUB_OUTPUT
           else
-            echo "digest_changed=true" >> $GITHUB_ENV
+            echo "digest_changed=true" >> $GITHUB_OUTPUT
             echo "$current_digest" > upstream_digest.txt
           fi
         else
           echo "First run or upstream_digest.txt file not found"
-          echo "digest_changed=true" >> $GITHUB_ENV
+          echo "digest_changed=true" >> $GITHUB_OUTPUT
           echo "$current_digest" > upstream_digest.txt
         fi
 
