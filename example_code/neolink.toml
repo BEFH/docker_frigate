@@ -1,0 +1,7 @@
+bind = "0.0.0.0"
+
+[[cameras]]
+name = "doorbell" # If changed, also change neolink_talk.sh
+username = "admin"
+password = "PASS" # Replace PASS
+address = "IP_ADDRESS:9000" # Replace IP_ADDRESS

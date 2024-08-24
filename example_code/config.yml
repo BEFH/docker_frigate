@@ -1,0 +1,64 @@
+# Place this in the /config directory of your frigate container
+
+mqtt:
+  enabled: False
+
+go2rtc:
+  # Replace IP_ADDRESS, and PASS
+  streams:
+    front_door:
+      - "ffmpeg:http://IP_ADDRESS/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password=PASS#video=copy#audio=copy#audio=opus"
+      - exec:/config/neolink_talk.sh#backchannel=1
+    front_door_sub:
+      - "ffmpeg:http://IP_ADDRESS/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password=PASS#video=copy#audio=copy#audio=opus"
+  ffmpeg:
+    hwaccel_args: preset-nvidia-h264
+    bin: ffmpeg
+    volume: "-af \"volume=30dB\""
+
+cameras:
+  front_door:
+    enabled: True
+    ffmpeg:
+      hwaccel_args: preset-nvidia-h264
+      inputs:
+        # High Res Stream
+        - path: rtsp://127.0.0.1:8554/front_door
+          roles:
+            - record
+        # Low Res Stream
+        - path: rtsp://127.0.0.1:8554/front_door_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      width: 320
+      height: 320
+      fps: 10
+    objects:
+      track:
+        - person
+        - cat
+        - bird
+    rtmp:
+      enabled: false
+    snapshots:
+      enabled: true
+    record:
+      enabled: true
+      retain:
+        days: 5
+      events:
+        retain:
+          default: 10
+
+detectors:
+  cuda:
+    type: tensorrt
+
+model:
+  path: /config/model_cache/tensorrt/yolov7-320.trt
+  input_tensor: nchw
+  input_pixel_format: rgb
+  width: 320
+  height: 320

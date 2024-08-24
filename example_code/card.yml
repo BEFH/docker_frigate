@@ -1,0 +1,59 @@
+# This is a working YAML for the frigate card in HASS
+
+type: custom:frigate-card
+cameras:
+  - camera_entity: camera.front_door
+    live_provider: go2rtc
+    go2rtc:
+      modes:
+        - webrtc
+      stream: front_door
+    triggers:
+      occupancy: false
+menu:
+  buttons:
+    microphone:
+      enabled: true
+      alignment: opposing
+      type: toggle
+      priority: 50
+    timeline:
+      enabled: true
+    cameras:
+      enabled: false
+    frigate:
+      enabled: false
+    download:
+      enabled: false
+    media_player:
+      enabled: false
+    mute:
+      enabled: true
+      alignment: opposing
+      icon: mdi:volume-mute
+    camera_ui:
+      enabled: true
+  style: hover-card
+  position: left
+  button_size: 50
+live:
+  controls:
+    thumbnails:
+      mode: none
+  auto_mute: all
+  preload: true
+  transition_effect: slide
+dimensions: {}
+media_gallery:
+  controls:
+    thumbnails:
+      size: 140
+      show_favorite_control: false
+      show_timeline_control: false
+      show_download_control: false
+    filter:
+      mode: none
+performance:
+  profile: high
+timeline:
+  style: stack
