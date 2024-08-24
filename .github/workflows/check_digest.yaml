@@ -22,11 +22,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install skopeo and jq
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y skopeo jq
-
     - name: Get current digest
       id: current_digest
       run: |
