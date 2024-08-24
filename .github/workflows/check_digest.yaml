@@ -15,7 +15,9 @@ on:
 jobs:
   check-digest:
     runs-on: ubuntu-latest
-    outputs: ${{ steps.current_digest.current_digest }}
+    outputs:
+      digest: ${{ steps.current_digest.current_digest }}
+      new: ${{ steps.compare_digests.digest_changed }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -53,10 +55,10 @@ jobs:
 
   call-publish:
     needs: check-digest
-    if: ${{ needs.check-digest.result == 'true' }}
+    if: ${{ needs.check-digest.outputs.new == 'true' }}
     uses: ./.github/workflows/publish_docker.yaml
     with:
-      digest: ${{ env.current_digest }}
+      digest: ${{ needs.check-digest.outputs.digest }}
 
   commit-changes:
     needs: call-publish
