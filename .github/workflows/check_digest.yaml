@@ -71,7 +71,8 @@ jobs:
     - name: Aggregate changed tags and digests
       id: aggregate
       run: |
-        dcheck_changed=$(echo "${{ toJSON(needs.check-digest.outputs) }}" | \
+        dcheck='${{ toJSON(needs.check-digest.outputs) }}'
+        dcheck_changed=$(echo "$dcheck" | \
           jq -r 'to_entries | map(select(.value | split("=")[1] == "changed" or split("=")[1] == "new"))')
         echo "n_changed=$(echo "$changed_tags" | jq 'length')" >> $GITHUB_OUTPUT
         echo $dcheck_changed | \

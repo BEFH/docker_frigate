@@ -43,6 +43,11 @@ jobs:
           echo "Using the tag $tag"
           nm="befh/frigate"
           st="${tag#*-}"
+          if grep -q arm64 <<< $tag; then
+            echo "arch=linux/arm64" >> $GITHUB_OUTPUT
+          else
+            echo "arch=linux/amd64" >> $GITHUB_OUTPUT
+          fi
           if [[ $tag == "stable" ]]; then
             echo "tags=$nm:latest,$nm:stable" >> $GITHUB_OUTPUT
           elif grep -vq stable <<< $tag; then
@@ -65,3 +70,4 @@ jobs:
           push: true
           tags: ${{ steps.finalize.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ steps.finalize.outputs.arch }}
