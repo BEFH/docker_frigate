@@ -50,7 +50,7 @@ jobs:
             echo "tags=$nm:latest-$st,$nm:$tag" >> $GITHUB_OUTPUT
           fi
           mv Dockerfile Dockerfile.orig
-          sed '1s/stable-tensorrt/$tag/' Dockerfile.orig > Dockerfile
+          sed '1s/stable-tensorrt/${{ inputs.tag }}/' Dockerfile.orig > Dockerfile
       -
         name: Extract metadata (tags, labels) for Docker
         id: meta
