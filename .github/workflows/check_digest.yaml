@@ -15,9 +15,13 @@ on:
 jobs:
   check-digest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: ['stable', 'stable-tensorrt', 'stable-standard-arm64']
     outputs:
-      digest: ${{ steps.digest.outputs.current_digest }}
-      new: ${{ steps.compare.outputs.digest_changed }}
+      stable: ${{ steps.compare.outputs.stable }}
+      stable-tensorrt: ${{ steps.compare.outputs.stable-tensorrt }}
+      stable-standard-arm64: ${{ steps.compare.outputs.stable-standard-arm64 }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -25,33 +29,66 @@ jobs:
     - name: Get current digest
       id: digest
       run: |
-        dg=$(skopeo inspect docker://ghcr.io/blakeblackshear/frigate:stable-tensorrt --override-arch=amd64 --override-os=linux | jq -r '.Digest')
-        echo "current_digest=$dg" >> $GITHUB_ENV
+        if [[ ${{ matrix.image }} == 'stable-standard-arm64' ]]; then
+          arch=arm64
+        else
+          arch=amd64
+        fi
+        dg=$(skopeo inspect docker://ghcr.io/blakeblackshear/frigate:${{ matrix.image }} --override-arch=$arch --override-os=linux | jq -r '.Digest')
         echo "current_digest=$dg" >> $GITHUB_OUTPUT
 
     - name: Compare digests
       id: compare
       run: |
-        if [ -f "upstream_digest.txt" ]; then
-          previous_digest=$(cat upstream_digest.txt)
-          if [ "$previous_digest" == "$current_digest" ]; then
-            echo "No change in digest"
-            echo "digest_changed=false" >> $GITHUB_OUTPUT
+        digest_file="upstream_digests.txt"
+        tag=${{ matrix.image }}
+        new_digest=${{ steps.digest.outputs.current_digest }}
+
+        # Read previous digest from file
+        if [ -f "$digest_file" ]; then
+          old_digest=$(grep "^$tag=" "$digest_file" | cut -d '=' -f2)
+          if [ "$old_digest" != "$new_digest" ]; then
+            echo "Digest changed for $tag"
+            stat=changed
           else
-            echo "digest_changed=true" >> $GITHUB_OUTPUT
+            stat=unchanged
           fi
         else
-          echo "First run or upstream_digest.txt file not found"
-          echo "digest_changed=true" >> $GITHUB_OUTPUT
+          echo "First run or $digest_file file not found"
+          stat=new
         fi
+        echo "${tag}=${new_digest}=${stat}" >> $GITHUB_OUTPUT
+
+  aggregate-results:
+    needs: check-digest
+    runs-on: ubuntu-latest
+    outputs:
+      changed_tags: ${{ steps.aggregate.outputs.changed_tags }}
+      changed_digests: ${{ steps.aggregate.outputs.changed_digests }}
+      changed_map: ${{ steps.aggregate.outputs.changed_map }}
+      n_changed: ${{ steps.aggregate.outputs.n_changed }}
+    steps:
+    - name: Aggregate changed tags and digests
+      id: aggregate
+      run: |
+        dcheck_changed=$(echo '${{ toJSON(needs.check-digest.outputs) }}' | \
+          jq -r 'to_entries | map(select(.value | split("=")[1] == "changed" or split("=")[1] == "new"))')
+        echo "n_changed=$(echo "$changed_tags" | jq 'length')" >> $GITHUB_OUTPUT
+        echo $dcheck_changed | \
+          jq '{include: map({tag: .key, digest: (.value | split("=")[0])})} | @json' | \
+          sed 's/"$\|\\//g' | \
+          sed 's/^"/changed_map=/' >> $GITHUB_OUTPUT
 
   call-publish:
-    needs: check-digest
-    if: ${{ needs.check-digest.outputs.new == 'true' }}
+    needs: aggregate-results
+    if: ${{ needs.aggregate-results.outputs.n_changed > 0 }}
+    strategy:
+      matrix: ${{ fromJson(needs.aggregate-results.outputs.changed_map) }}
     uses: ./.github/workflows/publish_docker.yaml
     secrets: inherit
     with:
-      digest: ${{ needs.check-digest.outputs.digest }}
+      digest: ${{ matrix.digest }}
+      tag: ${{ matrix.tag }}
 
   commit-changes:
     needs: [call-publish, check-digest]
@@ -63,11 +100,13 @@ jobs:
       uses: actions/checkout@v4
     - name: save
       run: |
-        echo '${{ needs.check-digest.outputs.digest }}' > upstream_digest.txt
+        echo '${{ toJSON(needs.check-digest.outputs) }}' | \
+          jq -r 'to_entries | map("\(.key)=\(.value | split("=")[0])") | .[]' \
+          > upstream_digests.txt
     - name: Commit and Push Changes
       run: |
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-        git add upstream_digest.txt
-        git commit -m "Update digest"
+        git add upstream_digests.txt
+        git commit -m "Update digests"
         git push
