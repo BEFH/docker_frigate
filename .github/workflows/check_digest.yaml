@@ -63,8 +63,6 @@ jobs:
     needs: check-digest
     runs-on: ubuntu-latest
     outputs:
-      changed_tags: ${{ steps.aggregate.outputs.changed_tags }}
-      changed_digests: ${{ steps.aggregate.outputs.changed_digests }}
       changed_map: ${{ steps.aggregate.outputs.changed_map }}
       n_changed: ${{ steps.aggregate.outputs.n_changed }}
     steps:
@@ -74,7 +72,7 @@ jobs:
         dcheck='${{ toJSON(needs.check-digest.outputs) }}'
         dcheck_changed=$(echo "$dcheck" | \
           jq -r 'to_entries | map(select(.value | split("=")[1] == "changed" or split("=")[1] == "new"))')
-        echo "n_changed=$(echo "$changed_tags" | jq 'length')" >> $GITHUB_OUTPUT
+        echo "n_changed=$(echo "$dcheck_changed" | jq 'length')" >> $GITHUB_OUTPUT
         echo $dcheck_changed | \
           jq '{include: map({tag: .key, digest: (.value | split("=")[0])})} | @json' | \
           sed 's/"$\|\\//g' | \
