@@ -37,11 +37,6 @@ jobs:
           echo "Using the tag $tag"
           nm="befh/frigate"
           st="${tag#*-}"
-          if grep -q arm64 <<< $tag; then
-            echo "arch=linux/arm64" >> $GITHUB_OUTPUT
-          else
-            echo "arch=linux/amd64" >> $GITHUB_OUTPUT
-          fi
           if [[ $tag == "stable" ]]; then
             echo "tags=$nm:latest,$nm:stable" >> $GITHUB_OUTPUT
           elif grep -vq stable <<< $tag; then
@@ -49,8 +44,15 @@ jobs:
           else
             echo "tags=$nm:latest-$st,$nm:$tag" >> $GITHUB_OUTPUT
           fi
-          mv Dockerfile Dockerfile.orig
-          sed '1s/stable-tensorrt/${{ inputs.tag }}/' Dockerfile.orig > Dockerfile
+          if grep -q arm64 <<< $tag; then
+            echo "arch=linux/arm64" >> $GITHUB_OUTPUT
+            mv Dockerfile.arm64 Dockerfile.orig
+            sed '1s/stable-standard-arm64/${{ inputs.tag }}/' Dockerfile.orig > Dockerfile
+          else
+            echo "arch=linux/amd64" >> $GITHUB_OUTPUT
+            mv Dockerfile Dockerfile.orig
+            sed '1s/stable-tensorrt/${{ inputs.tag }}/' Dockerfile.orig > Dockerfile
+          fi
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
